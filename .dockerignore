@@ -1,0 +1,34 @@
+# Development / VCS
+.git/
+.github/
+.gitignore
+
+# Local secrets and IDE state
+.env
+.env.local
+.idea/
+.vscode/
+.claude/
+
+# Python build/cache artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Test code and fixtures — not needed in the runtime image
+tests/
+.test-fixtures/
+
+# Docs — keep image lean (these stay in repo for humans)
+*.md
+PRD.md
+PLAN.md
+README.md
+
+# Logs / misc
+*.log

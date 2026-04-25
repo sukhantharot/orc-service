@@ -5,7 +5,8 @@ pydantic-settings>=2.6,<3
 python-multipart>=0.0.12,<1
 numpy>=1.26,<3
 pillow>=10,<12
-opencv-python-headless>=4.10,<5
+# Single headless+contrib build — avoid mixing with paddleocr’s opencv-python + opencv-contrib-python (malloc crashes)
+opencv-contrib-python-headless>=4.10,<5
 fastmrz>=2.0,<3
 paddlepaddle>=2.6,<3
 paddleocr>=2.7,<3

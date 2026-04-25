@@ -1,0 +1,52 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install system deps (tesseract for fastmrz)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            tesseract-ocr tesseract-ocr-eng libgomp1
+          TESSDATA_DIR="$(dirname "$(find /usr/share -name eng.traineddata | head -n1)")"
+          sudo curl -sSL -o "${TESSDATA_DIR}/mrz.traineddata" \
+            https://github.com/DoubangoTelecom/tesseractMRZ/raw/master/tessdata_best/mrz.traineddata
+          test -s "${TESSDATA_DIR}/mrz.traineddata"
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # Mirror Dockerfile's opencv variant fix — avoid opencv-python + opencv-contrib-python collision
+          pip uninstall -y opencv-python opencv-contrib-python opencv-python-headless 2>/dev/null || true
+          pip install "opencv-contrib-python-headless>=4.10,<5"
+          pip install pytest httpx
+
+      - name: Run pytest
+        env:
+          API_KEY: test-key
+          # Match Dockerfile thread pinning so CI behaves like prod
+          OMP_NUM_THREADS: '1'
+          OPENBLAS_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
+          FLAGS_use_mkldnn: '0'
+        run: pytest -v --tb=short

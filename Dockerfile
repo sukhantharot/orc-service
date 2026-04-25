@@ -25,10 +25,16 @@ RUN TESSDATA_DIR="$(dirname "$(find /usr/share -name eng.traineddata | head -n1)
     && test -s "${TESSDATA_DIR}/mrz.traineddata"
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip uninstall -y opencv-python opencv-contrib-python opencv-python-headless 2>/dev/null || true \
+    && pip install --no-cache-dir "opencv-contrib-python-headless>=4.10,<5"
 
-# Pre-download Thai+English PaddleOCR models so first /scan doesn't pay download latency
-RUN python -c "from paddleocr import PaddleOCR; PaddleOCR(use_angle_cls=True, lang='th', show_log=False)"
+# PaddleOCR: avoid MKL-DNN in thin containers (can segfault); thread caps reduce allocator issues.
+# Models download on first Thai ID /scan (no RUN warmup — init crashes in some build daemons).
+ENV OMP_NUM_THREADS=1
+ENV OPENBLAS_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+ENV FLAGS_use_mkldnn=0
 
 COPY app/ ./app/
 

@@ -1,3 +1,4 @@
+import os
 import re
 from dataclasses import dataclass
 from datetime import date
@@ -15,6 +16,8 @@ _ocr = None
 def _get_ocr():
     global _ocr
     if _ocr is None:
+        # Default off: MKL-DNN in paddle can segfault in slim Linux containers.
+        os.environ.setdefault("FLAGS_use_mkldnn", "0")
         from paddleocr import PaddleOCR
 
         _ocr = PaddleOCR(use_angle_cls=True, lang="th", show_log=False)
