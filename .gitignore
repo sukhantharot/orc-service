@@ -12,3 +12,4 @@ venv/
 .vscode/
 *.log
 .test-fixtures/
+.claude/
