@@ -6,6 +6,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libglib2.0-0 \
         libgomp1 \
+        libgl1 \
         libsm6 \
         libxext6 \
         libxrender1 \
@@ -25,9 +26,9 @@ RUN TESSDATA_DIR="$(dirname "$(find /usr/share -name eng.traineddata | head -n1)
     && test -s "${TESSDATA_DIR}/mrz.traineddata"
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip uninstall -y opencv-python opencv-contrib-python opencv-python-headless 2>/dev/null || true \
-    && pip install --no-cache-dir "opencv-contrib-python-headless>=4.10,<5"
+# paddlex[ocr] brings opencv-contrib-python==4.10.0.84 and checks for that exact package name at runtime
+# (importlib.metadata), so we keep it instead of substituting the headless variant.
+RUN pip install --no-cache-dir -r requirements.txt
 
 # PaddleOCR: avoid MKL-DNN in thin containers (can segfault); thread caps reduce allocator issues.
 # Models download on first Thai ID /scan (no RUN warmup — init crashes in some build daemons).

@@ -3,10 +3,13 @@ uvicorn[standard]>=0.32,<0.40
 pydantic>=2.9,<3
 pydantic-settings>=2.6,<3
 python-multipart>=0.0.12,<1
-numpy>=1.26,<3
+numpy>=1.26,<2.4
 pillow>=10,<12
-# Single headless+contrib build — avoid mixing with paddleocr’s opencv-python + opencv-contrib-python (malloc crashes)
-opencv-contrib-python-headless>=4.10,<5
 fastmrz>=2.0,<3
-paddlepaddle>=2.6,<3
-paddleocr>=2.7,<3
+# paddlepaddle 3.3.x has a PIR/oneDNN regression that breaks CPU inference (NotImplementedError
+# in ConvertPirAttribute2RuntimeAttribute) — pin to 3.2.x until upstream fixes it.
+paddlepaddle>=3.2,<3.3
+paddleocr>=3.2,<4
+# paddleocr only pulls paddlex[ocr-core]; the OCR pipeline needs the full [ocr] extras at runtime.
+# paddlex[ocr] also brings opencv-contrib-python — that's the only cv2 we install, so libgl1 is required at the OS level.
+paddlex[ocr]>=3.5,<3.6

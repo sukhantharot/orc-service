@@ -8,16 +8,22 @@ from app.config import get_settings
 
 
 def decode_image(image_bytes: bytes) -> np.ndarray | None:
-    """Decode bytes → BGR uint8 array. Falls back to PIL if cv2 fails. Returns None if both fail."""
-    arr = np.frombuffer(image_bytes, dtype=np.uint8)
-    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-    if img is not None:
-        return img
+    """Decode bytes → BGR uint8 array. PIL first (JPEG/PNG) — some Docker+pip OpenCV mixes lack cv2.imdecode."""
+    # PIL path avoids broken/partial cv2 wheels after uninstalling extra opencv-* packages
     try:
-        pil = Image.open(BytesIO(image_bytes)).convert("RGB")
+        pil = Image.open(BytesIO(image_bytes))
+        pil.load()
+        rgb = pil.convert("RGB")
+        return np.array(rgb)[:, :, ::-1].copy()
     except Exception:
-        return None
-    return np.array(pil)[:, :, ::-1].copy()
+        pass
+    arr = np.frombuffer(image_bytes, dtype=np.uint8)
+    imdecode = getattr(cv2, "imdecode", None)
+    if imdecode is not None:
+        img = imdecode(arr, cv2.IMREAD_COLOR)
+        if img is not None:
+            return img
+    return None
 
 
 def normalize_size(img: np.ndarray, max_dim: int | None = None) -> np.ndarray:

@@ -20,7 +20,13 @@ def _get_ocr():
         os.environ.setdefault("FLAGS_use_mkldnn", "0")
         from paddleocr import PaddleOCR
 
-        _ocr = PaddleOCR(use_angle_cls=True, lang="th", show_log=False)
+        # PP-OCRv5 (paddleocr 3.x) is the first version with Thai in the default rec dict.
+        _ocr = PaddleOCR(
+            lang="th",
+            use_textline_orientation=True,
+            use_doc_orientation_classify=False,
+            use_doc_unwarping=False,
+        )
     return _ocr
 
 
@@ -33,21 +39,22 @@ class OcrLine:
 
 
 def _run_ocr(img: np.ndarray) -> list[OcrLine]:
-    raw = _get_ocr().ocr(img, cls=True)
-    if not raw or not raw[0]:
+    raw = _get_ocr().predict(img)
+    if not raw:
         return []
     out: list[OcrLine] = []
-    for box, (text, conf) in raw[0]:
-        xs = [p[0] for p in box]
-        ys = [p[1] for p in box]
-        out.append(
-            OcrLine(
-                text=str(text).strip(),
-                confidence=float(conf),
-                cx=sum(xs) / 4,
-                cy=sum(ys) / 4,
+    for res in raw:
+        for text, conf, poly in zip(res["rec_texts"], res["rec_scores"], res["rec_polys"]):
+            xs = [float(p[0]) for p in poly]
+            ys = [float(p[1]) for p in poly]
+            out.append(
+                OcrLine(
+                    text=str(text).strip(),
+                    confidence=float(conf),
+                    cx=sum(xs) / len(xs),
+                    cy=sum(ys) / len(ys),
+                )
             )
-        )
     return out
 
 
