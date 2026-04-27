@@ -29,7 +29,6 @@ COPY requirements.txt .
 # paddlex[ocr] brings opencv-contrib-python==4.10.0.84 and checks for that exact package name at runtime
 # (importlib.metadata), so we keep it instead of substituting the headless variant.
 RUN pip install --no-cache-dir -r requirements.txt
-
 # PaddleOCR: avoid MKL-DNN in thin containers (can segfault); thread caps reduce allocator issues.
 # Models download on first Thai ID /scan (no RUN warmup — init crashes in some build daemons).
 ENV OMP_NUM_THREADS=1
